@@ -6,15 +6,34 @@ import { Badge } from '@/components/ui/badge';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { format } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { getOrders, getProducts } from '@/components/data/sampleProducts';
+import { toast } from 'sonner';
+import { listProducts, listAdminOrders } from '@/api/api';
 
 export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setOrders(getOrders());
-    setProducts(getProducts());
+    const load = async () => {
+      try {
+        setIsLoading(true);
+        const [allOrders, allProducts] = await Promise.all([
+          listAdminOrders(),
+          listProducts(),
+        ]);
+        setOrders(Array.isArray(allOrders) ? allOrders : []);
+        setProducts(Array.isArray(allProducts) ? allProducts : []);
+      } catch (err) {
+        toast.error(err?.message || 'Failed to load dashboard data');
+        setOrders([]);
+        setProducts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    load();
   }, []);
 
   // Calculate stats
@@ -24,44 +43,54 @@ export default function AdminDashboard() {
   const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
 
   // Recent orders
-  const recentOrders = orders?.slice(0, 5) || [];
+  const recentOrders = (orders || [])
+    .slice()
+    .sort((a, b) => new Date(b?.created_date || 0) - new Date(a?.created_date || 0))
+    .slice(0, 5);
 
-  // Chart data (mock for demo)
-  const salesData = [
-    { name: 'Mon', sales: 2400 },
-    { name: 'Tue', sales: 1398 },
-    { name: 'Wed', sales: 9800 },
-    { name: 'Thu', sales: 3908 },
-    { name: 'Fri', sales: 4800 },
-    { name: 'Sat', sales: 3800 },
-    { name: 'Sun', sales: 4300 },
-  ];
+  const salesData = (() => {
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const base = labels.map((name) => ({ name, sales: 0 }));
+
+    (orders || []).forEach((o) => {
+      if (!o?.created_date) return;
+      const d = new Date(o.created_date);
+      if (Number.isNaN(d.getTime())) return;
+      const idx = (d.getDay() + 6) % 7; // 0=Mon
+      base[idx].sales += Number(o.total || 0);
+    });
+
+    return base;
+  })();
 
   const stats = [
     {
       title: 'Total Revenue',
       value: `$${totalRevenue.toFixed(2)}`,
       icon: DollarSign,
-      change: '+12.5%',
+      change: '',
       isPositive: true,
       color: 'bg-emerald-500',
     },
+
     {
       title: 'Total Orders',
       value: totalOrders,
       icon: ShoppingCart,
-      change: '+8.2%',
+      change: '',
       isPositive: true,
       color: 'bg-blue-500',
     },
+
     {
       title: 'Products',
       value: totalProducts,
       icon: Package,
-      change: '+3',
+      change: '',
       isPositive: true,
       color: 'bg-purple-500',
     },
+
     {
       title: 'Pending Orders',
       value: pendingOrders,
@@ -104,14 +133,22 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center mt-4">
-                  {stat.isPositive ? (
-                    <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+                  {stat.change ? (
+                    <>
+                      {stat.isPositive ? (
+                        <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+                      ) : (
+                        <ArrowDownRight className="w-4 h-4 text-red-500" />
+                      )}
+                      <span className={`text-sm ml-1 ${stat.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {stat.change}
+                      </span>
+                    </>
                   ) : (
-                    <ArrowDownRight className="w-4 h-4 text-red-500" />
+                    <span className="text-sm text-gray-500">
+                      {isLoading ? 'Loading...' : 'Updated'}
+                    </span>
                   )}
-                  <span className={`text-sm ml-1 ${stat.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
-                    {stat.change}
-                  </span>
                 </div>
               </CardContent>
             </Card>

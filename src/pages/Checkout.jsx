@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CreditCard, Truck, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, CheckCircle, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,7 @@ import { createPageUrl } from '@/utils';
 import { toast } from 'sonner';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import { createOrder } from '@/components/data/sampleProducts';
+import { createOrder } from '@/api/api';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -60,12 +60,19 @@ export default function Checkout() {
       total,
     };
 
-    const newOrder = createOrder(orderData);
-    
+    let newOrder;
+    try {
+      newOrder = await createOrder(orderData);
+    } catch (err) {
+      toast.error(err?.message || 'Failed to place order');
+      setIsSubmitting(false);
+      return;
+    }
+
     // Clear cart
     localStorage.setItem('drherbs_cart', '[]');
     window.dispatchEvent(new Event('cartUpdated'));
-    
+
     setOrderId(newOrder.id);
     setOrderPlaced(true);
     setIsSubmitting(false);
@@ -255,11 +262,17 @@ export default function Checkout() {
                   {cartItems.map((item) => (
                     <div key={item.id} className="flex gap-4">
                       <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-                        <img
-                          src={item.image_url || 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=100&q=80'}
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                        />
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <ImageIcon className="w-6 h-6" />
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1">
                         <p className="font-medium text-sm line-clamp-1">{item.name}</p>

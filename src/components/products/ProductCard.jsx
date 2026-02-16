@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Star, Heart } from 'lucide-react';
+import { ShoppingCart, Star, Heart, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
@@ -11,7 +11,11 @@ export default function ProductCard({ product }) {
   const addToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
+    const safeImageUrl = typeof product.image_url === 'string' && product.image_url.startsWith('data:')
+      ? ''
+      : product.image_url;
+
     const cart = JSON.parse(localStorage.getItem('drherbs_cart') || '[]');
     const existingItem = cart.find(item => item.id === product.id);
     
@@ -22,12 +26,24 @@ export default function ProductCard({ product }) {
         id: product.id,
         name: product.name,
         price: product.price,
-        image_url: product.image_url,
+        image_url: safeImageUrl,
         quantity: 1
       });
     }
-    
-    localStorage.setItem('drherbs_cart', JSON.stringify(cart));
+
+    try {
+      localStorage.setItem('drherbs_cart', JSON.stringify(cart));
+    } catch (err) {
+      // If large base64 images cause quota issues, strip images and retry.
+      try {
+        const sanitized = cart.map((item) => ({ ...item, image_url: '' }));
+        localStorage.setItem('drherbs_cart', JSON.stringify(sanitized));
+      } catch {
+        toast.error('Cart storage is full. Please clear your cart and try again.');
+        return;
+      }
+    }
+
     window.dispatchEvent(new Event('cartUpdated'));
     toast.success('Added to cart!');
   };
@@ -49,11 +65,17 @@ export default function ProductCard({ product }) {
         <div className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
           {/* Image Container */}
           <div className="relative aspect-square overflow-hidden bg-gray-100">
-            <img
-              src={product.image_url || 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&q=80'}
-              alt={product.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            />
+            {product.image_url ? (
+              <img
+                src={product.image_url}
+                alt={product.name}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <ImageIcon className="w-10 h-10" />
+              </div>
+            )}
             
             {/* Badges */}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
@@ -77,7 +99,7 @@ export default function ProductCard({ product }) {
             </div>
 
             {/* Add to Cart Button */}
-            <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0">
+            <div className="absolute bottom-4 left-4 right-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all transform translate-y-0 sm:translate-y-4 sm:group-hover:translate-y-0">
               <Button 
                 onClick={addToCart}
                 className="w-full bg-emerald-500 hover:bg-emerald-600 text-white gap-2 rounded-xl"

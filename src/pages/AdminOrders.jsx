@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Eye, Package, Truck, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Search, Eye, Package, Truck, CheckCircle, XCircle, Clock, ImageIcon } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { format } from 'date-fns';
-import { getOrders, updateOrder } from '@/components/data/sampleProducts';
+import { listAdminOrders, updateAdminOrder } from '@/api/api';
 
 const statusConfig = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
@@ -31,19 +32,30 @@ export default function AdminOrders() {
     loadOrders();
   }, []);
 
-  const loadOrders = () => {
-    const allOrders = getOrders();
-    setOrders(allOrders);
-    setIsLoading(false);
+  const loadOrders = async () => {
+    try {
+      setIsLoading(true);
+      const allOrders = await listAdminOrders();
+      setOrders(Array.isArray(allOrders) ? allOrders : []);
+    } catch (err) {
+      toast.error(err?.message || 'Failed to load orders');
+      setOrders([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleUpdateStatus = (orderId, newStatus) => {
-    updateOrder(orderId, { status: newStatus });
-    loadOrders();
-    if (selectedOrder && selectedOrder.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, status: newStatus });
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    try {
+      await updateAdminOrder(orderId, { status: newStatus });
+      await loadOrders();
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder({ ...selectedOrder, status: newStatus });
+      }
+      toast.success('Order status updated!');
+    } catch (err) {
+      toast.error(err?.message || 'Failed to update order');
     }
-    toast.success('Order status updated!');
   };
 
   const filteredOrders = orders?.filter((order) => {
@@ -245,12 +257,19 @@ export default function AdminOrders() {
                   {selectedOrder.items?.map((item, index) => (
                     <div key={index} className="flex gap-4 p-3 bg-gray-50 rounded-lg">
                       <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden shrink-0">
-                        <img
-                          src={item.image_url || 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=100&q=80'}
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                        />
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <ImageIcon className="w-6 h-6" />
+                          </div>
+                        )}
                       </div>
+
                       <div className="flex-1">
                         <p className="font-medium">{item.name}</p>
                         <p className="text-sm text-gray-500">

@@ -7,10 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-
-// Fixed admin credentials
-const ADMIN_EMAIL = 'admin@drherbs.com';
-const ADMIN_PASSWORD = 'admin123';
+import { adminLogin } from '@/api/api';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -24,17 +21,24 @@ export default function AdminLogin() {
     setError('');
     setIsLoading(true);
 
-    // Simulate loading
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      const data = await adminLogin({ email: formData.email, password: formData.password });
 
-    if (formData.email === ADMIN_EMAIL && formData.password === ADMIN_PASSWORD) {
+      if (!data?.token) {
+        throw new Error('Login failed. Token missing from response.');
+      }
+
+      localStorage.setItem('drherbs_admin_token', data.token);
+
+      // Keep existing guard logic working for now (AdminLayout checks this)
       localStorage.setItem('drherbs_admin', 'true');
+
       navigate(createPageUrl('AdminDashboard'));
-    } else {
-      setError('Invalid email or password. Please try again.');
+    } catch (err) {
+      setError(err?.message || 'Invalid email or password. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (

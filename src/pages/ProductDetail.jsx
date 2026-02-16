@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Heart, Star, Minus, Plus, Check, Truck, Shield, RefreshCw } from 'lucide-react';
+import { ShoppingCart, Heart, Star, Minus, Plus, Check, Truck, Shield, RefreshCw, ImageIcon } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import { getProductById, getReviews, createReview } from '@/components/data/sampleProducts';
+import { getReviews, createReview } from '@/components/data/sampleProducts';
+import { getProduct } from '@/api/api';
 
 export default function ProductDetail() {
   const [product, setProduct] = useState(null);
@@ -23,16 +25,26 @@ export default function ProductDetail() {
   const productId = urlParams.get('id');
 
   useEffect(() => {
-    if (productId) {
-      const foundProduct = getProductById(productId);
-      setProduct(foundProduct);
-      const productReviews = getReviews(productId);
-      setReviews(productReviews);
-      setIsLoading(false);
-    }
+    const load = async () => {
+      if (!productId) return;
+      try {
+        const foundProduct = await getProduct(productId);
+        setProduct(foundProduct);
+      } finally {
+        const productReviews = getReviews(productId);
+        setReviews(productReviews);
+        setIsLoading(false);
+      }
+    };
+
+    load();
   }, [productId]);
 
   const addToCart = () => {
+    const safeImageUrl = typeof product.image_url === 'string' && product.image_url.startsWith('data:')
+      ? ''
+      : product.image_url;
+
     const cart = JSON.parse(localStorage.getItem('drherbs_cart') || '[]');
     const existingItem = cart.find(item => item.id === product.id);
     
@@ -43,12 +55,23 @@ export default function ProductDetail() {
         id: product.id,
         name: product.name,
         price: product.price,
-        image_url: product.image_url,
+        image_url: safeImageUrl,
         quantity
       });
     }
-    
-    localStorage.setItem('drherbs_cart', JSON.stringify(cart));
+
+    try {
+      localStorage.setItem('drherbs_cart', JSON.stringify(cart));
+    } catch (err) {
+      try {
+        const sanitized = cart.map((item) => ({ ...item, image_url: '' }));
+        localStorage.setItem('drherbs_cart', JSON.stringify(sanitized));
+      } catch {
+        toast.error('Cart storage is full. Please clear your cart and try again.');
+        return;
+      }
+    }
+
     window.dispatchEvent(new Event('cartUpdated'));
     toast.success(`Added ${quantity} item(s) to cart!`);
   };
@@ -105,7 +128,7 @@ export default function ProductDetail() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <main className="pt-28 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 mb-16">
@@ -121,12 +144,18 @@ export default function ProductDetail() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    src={images[selectedImage] || 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=800&q=80'}
+                    src={images[selectedImage] || ''}
                     alt={product.name}
                     className="w-full h-full object-cover"
                   />
                 </AnimatePresence>
+                {images.length === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center text-gray-400 pointer-events-none">
+                    <ImageIcon className="w-12 h-12" />
+                  </div>
+                )}
               </div>
+
               {images.length > 1 && (
                 <div className="flex gap-3 overflow-x-auto pb-2">
                   {images.map((img, index) => (
@@ -134,8 +163,8 @@ export default function ProductDetail() {
                       key={index}
                       onClick={() => setSelectedImage(index)}
                       className={`w-20 h-20 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
-                        selectedImage === index 
-                          ? 'border-emerald-500' 
+                        selectedImage === index
+                          ? 'border-emerald-500'
                           : 'border-transparent'
                       }`}
                     >
@@ -154,7 +183,7 @@ export default function ProductDetail() {
               <Badge className="bg-emerald-100 text-emerald-700 mb-4">
                 {product.category?.replace(/_/g, ' ')}
               </Badge>
-              
+
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                 {product.name}
               </h1>
@@ -162,19 +191,17 @@ export default function ProductDetail() {
               <div className="flex items-center gap-4 mb-6">
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
+                    <Star
+                      key={i}
                       className={`w-5 h-5 ${
-                        i < (product.rating || 4) 
-                          ? 'fill-yellow-400 text-yellow-400' 
+                        i < (product.rating || 4)
+                          ? 'fill-yellow-400 text-yellow-400'
                           : 'text-gray-200'
                       }`}
                     />
                   ))}
                 </div>
-                <span className="text-gray-500">
-                  ({reviews?.length || 0} reviews)
-                </span>
+                <span className="text-gray-500">({reviews?.length || 0} reviews)</span>
               </div>
 
               <div className="flex items-center gap-4 mb-6">
@@ -188,9 +215,10 @@ export default function ProductDetail() {
                 )}
               </div>
 
-              <p className="text-gray-600 text-lg mb-8 leading-relaxed">
-                {product.description}
-              </p>
+              <div
+                className="text-gray-600 text-lg mb-8 leading-relaxed prose max-w-none"
+                dangerouslySetInnerHTML={{ __html: product.description || '' }}
+              />
 
               {/* Benefits */}
               {product.benefits?.length > 0 && (
@@ -228,7 +256,7 @@ export default function ProductDetail() {
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
-                <Button 
+                <Button
                   onClick={addToCart}
                   className="flex-1 h-12 bg-emerald-500 hover:bg-emerald-600 gap-2 rounded-xl"
                 >
@@ -259,20 +287,12 @@ export default function ProductDetail() {
           </div>
 
           {/* Tabs Section */}
-          <Tabs defaultValue="description" className="bg-white rounded-3xl p-8 shadow-sm">
+          <Tabs defaultValue="reviews" className="bg-white rounded-3xl p-8 shadow-sm">
             <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto mb-8">
+              <TabsTrigger value="reviews">Reviews ({reviews?.length || 0})</TabsTrigger>
               <TabsTrigger value="description">Description</TabsTrigger>
               <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews ({reviews?.length || 0})</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="description" className="prose max-w-none">
-              <p className="text-gray-600 leading-relaxed">{product.description}</p>
-            </TabsContent>
-
-            <TabsContent value="ingredients">
-              <p className="text-gray-600 leading-relaxed">{product.ingredients || 'Natural herbal ingredients carefully sourced from trusted suppliers.'}</p>
-            </TabsContent>
 
             <TabsContent value="reviews">
               {/* Review Form */}
@@ -292,11 +312,13 @@ export default function ProductDetail() {
                         type="button"
                         onClick={() => setReviewForm({ ...reviewForm, rating: star })}
                       >
-                        <Star className={`w-6 h-6 ${
-                          star <= reviewForm.rating 
-                            ? 'fill-yellow-400 text-yellow-400' 
-                            : 'text-gray-300'
-                        }`} />
+                        <Star
+                          className={`w-6 h-6 ${
+                            star <= reviewForm.rating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
                       </button>
                     ))}
                   </div>
@@ -329,11 +351,11 @@ export default function ProductDetail() {
                         <p className="font-semibold text-gray-900">{review.reviewer_name}</p>
                         <div className="flex items-center gap-1">
                           {[...Array(5)].map((_, i) => (
-                            <Star 
-                              key={i} 
+                            <Star
+                              key={i}
                               className={`w-4 h-4 ${
-                                i < review.rating 
-                                  ? 'fill-yellow-400 text-yellow-400' 
+                                i < review.rating
+                                  ? 'fill-yellow-400 text-yellow-400'
                                   : 'text-gray-200'
                               }`}
                             />
@@ -345,6 +367,19 @@ export default function ProductDetail() {
                   </div>
                 ))}
               </div>
+            </TabsContent>
+
+            <TabsContent value="description" className="prose max-w-none">
+              <div
+                className="text-gray-600 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: product.description || '' }}
+              />
+            </TabsContent>
+
+            <TabsContent value="ingredients">
+              <p className="text-gray-600 leading-relaxed">
+                {product.ingredients || 'Natural herbal ingredients carefully sourced from trusted suppliers.'}
+              </p>
             </TabsContent>
           </Tabs>
         </div>

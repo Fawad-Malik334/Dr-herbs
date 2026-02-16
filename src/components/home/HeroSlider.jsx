@@ -5,46 +5,36 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
-const slides = [
-  {
-    id: 1,
-    image: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=1920&q=80',
-    title: 'Nature\'s Healing Power',
-    subtitle: 'Discover Premium Herbal Products',
-    description: 'Crafted with 100% natural ingredients for your wellness journey',
-    cta: 'Shop Now',
-  },
-  {
-    id: 2,
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1920&q=80',
-    title: 'Pure & Organic',
-    subtitle: 'Wellness From Nature',
-    description: 'Experience the authentic power of traditional herbs',
-    cta: 'Explore Collection',
-  },
-  {
-    id: 3,
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1920&q=80',
-    title: 'Holistic Health',
-    subtitle: 'Transform Your Life',
-    description: 'Premium supplements for mind, body & soul',
-    cta: 'View Products',
-  },
-];
+/**
+ * @typedef {{
+ *  id?: string | number,
+ *  image?: string,
+ *  title?: string,
+ *  subtitle?: string,
+ *  description?: string,
+ *  cta?: string,
+ * }} HeroSlide
+ */
 
-export default function HeroSlider() {
+/**
+ * @param {{ slides?: HeroSlide[] }} props
+ */
+export default function HeroSlider({ slides = [] }) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
+    if (!slides.length) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   const goToSlide = (index) => setCurrentSlide(index);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
+
+  const active = slides[currentSlide];
 
   return (
     <div className="relative h-screen min-h-[600px] overflow-hidden">
@@ -59,7 +49,9 @@ export default function HeroSlider() {
         >
           <div 
             className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${slides[currentSlide].image})` }}
+            style={{
+              backgroundImage: active?.image ? `url(${active.image})` : 'linear-gradient(135deg, rgb(6 78 59), rgb(5 150 105))'
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
         </motion.div>
@@ -83,14 +75,15 @@ export default function HeroSlider() {
                 transition={{ delay: 0.3 }}
                 className="inline-block px-4 py-2 bg-emerald-500/20 backdrop-blur-sm text-emerald-300 rounded-full text-sm font-medium mb-6"
               >
-                {slides[currentSlide].subtitle}
+                {active?.subtitle || 'Discover Premium Herbal Products'}
               </motion.span>
               <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-                {slides[currentSlide].title}
+                {active?.title || "Nature's Healing Power"}
               </h1>
               <p className="text-xl text-gray-200 mb-8 leading-relaxed">
-                {slides[currentSlide].description}
+                {active?.description || 'Crafted with 100% natural ingredients for your wellness journey'}
               </p>
+
               <Link to={createPageUrl('Products')}>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
@@ -100,9 +93,10 @@ export default function HeroSlider() {
                     size="lg" 
                     className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-6 text-lg gap-2 group"
                   >
-                    {slides[currentSlide].cta}
+                    {active?.cta || 'Shop Now'}
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
+
                 </motion.div>
               </Link>
             </motion.div>
@@ -110,34 +104,36 @@ export default function HeroSlider() {
         </div>
       </div>
 
-      {/* Navigation Arrows */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-      >
-        <ChevronLeft className="w-6 h-6" />
-      </button>
-      <button
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-      >
-        <ChevronRight className="w-6 h-6" />
-      </button>
-
-      {/* Dots */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
-        {slides.map((_, index) => (
+      {slides.length > 1 && (
+        <>
           <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`h-2 rounded-full transition-all duration-300 ${
-              index === currentSlide 
-                ? 'w-8 bg-emerald-500' 
-                : 'w-2 bg-white/50 hover:bg-white/70'
-            }`}
-          />
-        ))}
-      </div>
+            onClick={prevSlide}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <button
+            onClick={nextSlide}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  index === currentSlide 
+                    ? 'w-8 bg-emerald-500' 
+                    : 'w-2 bg-white/50 hover:bg-white/70'
+                }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

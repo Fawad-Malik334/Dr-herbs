@@ -29,7 +29,7 @@ export default function ProductFilters({
     setFilters({
       category: '',
       minPrice: 0,
-      maxPrice: 500,
+      maxPrice: 5000,
       rating: 0,
     });
   };
@@ -115,9 +115,9 @@ export default function ProductFilters({
           <h4 className="font-medium text-gray-900 mb-4">Price Range</h4>
           <div className="px-2">
             <Slider
-              value={[filters.minPrice || 0, filters.maxPrice || 500]}
+              value={[filters.minPrice || 0, filters.maxPrice || 5000]}
               min={0}
-              max={500}
+              max={5000}
               step={10}
               onValueChange={([min, max]) => {
                 updateFilter('minPrice', min);
@@ -127,7 +127,7 @@ export default function ProductFilters({
             />
             <div className="flex items-center justify-between text-sm text-gray-600">
               <span>${filters.minPrice || 0}</span>
-              <span>${filters.maxPrice || 500}</span>
+              <span>${filters.maxPrice || 5000}</span>
             </div>
           </div>
         </div>

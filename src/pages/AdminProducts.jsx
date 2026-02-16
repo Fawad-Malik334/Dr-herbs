@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Pencil, Trash2, Search, X, ImageIcon } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { getProducts, createProduct, updateProduct, deleteProduct } from '@/components/data/sampleProducts';
+import { listProducts, createProduct, updateProduct, deleteProduct } from '@/api/api';
 
 const categories = [
   { value: 'herbs', label: 'Herbs' },
@@ -31,11 +32,95 @@ const emptyProduct = {
   original_price: '',
   category: 'herbs',
   image_url: '',
+  images: [],
   stock: '',
   featured: false,
   benefits: [],
   ingredients: '',
 };
+
+function RichTextEditor({ value, onChange }) {
+  const editorRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!editorRef.current) return;
+    if (editorRef.current.innerHTML !== (value || '')) {
+      editorRef.current.innerHTML = value || '';
+    }
+  }, [value]);
+
+  const exec = (cmd, arg) => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand(cmd, false, arg);
+    onChange(editorRef.current.innerHTML);
+  };
+
+  const insertLink = () => {
+    const url = window.prompt('Enter link URL');
+    if (!url) return;
+    exec('createLink', url);
+  };
+
+  const insertImage = () => {
+    fileInputRef.current?.click();
+  };
+
+  const onPickImage = (file) => {
+    if (!file) return;
+    if (!file.type?.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    if (file.size > 1024 * 1024) {
+      toast.error('Image is too large. Please choose an image under 1MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== 'string') {
+        toast.error('Failed to read image');
+        return;
+      }
+      exec('insertImage', result);
+    };
+    reader.onerror = () => toast.error('Failed to read image');
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="rounded-xl border border-gray-200 overflow-hidden">
+      <div className="flex flex-wrap gap-2 p-2 bg-gray-50 border-b border-gray-200">
+        <Button type="button" variant="outline" size="sm" onClick={() => exec('bold')}>B</Button>
+        <Button type="button" variant="outline" size="sm" onClick={() => exec('italic')}>I</Button>
+        <Button type="button" variant="outline" size="sm" onClick={() => exec('underline')}>U</Button>
+        <Button type="button" variant="outline" size="sm" onClick={insertLink}>Link</Button>
+        <Button type="button" variant="outline" size="sm" onClick={insertImage}>Image</Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = '';
+            onPickImage(f);
+          }}
+        />
+      </div>
+      <div
+        ref={editorRef}
+        className="min-h-[160px] p-3 focus:outline-none prose max-w-none"
+        contentEditable
+        onInput={() => onChange(editorRef.current?.innerHTML || '')}
+      />
+    </div>
+  );
+}
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -46,14 +131,79 @@ export default function AdminProducts() {
   const [formData, setFormData] = useState(emptyProduct);
   const [benefitInput, setBenefitInput] = useState('');
 
+  const galleryInputRef = useRef(null);
+
+  const handleMainImageUpload = (file) => {
+    if (!file) return;
+
+    if (!file.type?.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== 'string') {
+        toast.error('Failed to read image');
+        return;
+      }
+      setFormData((prev) => ({ ...prev, image_url: result }));
+    };
+    reader.onerror = () => {
+      toast.error('Failed to read image');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const addGalleryImage = (file) => {
+    if (!file) return;
+
+    if (!file.type?.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== 'string') {
+        toast.error('Failed to read image');
+        return;
+      }
+      setFormData((prev) => ({
+        ...prev,
+        images: [...(prev.images || []), result],
+      }));
+    };
+    reader.onerror = () => toast.error('Failed to read image');
+    reader.readAsDataURL(file);
+  };
+
+  const removeGalleryImage = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: (prev.images || []).filter((_, i) => i !== index),
+    }));
+  };
+
+  const gallery = Array.isArray(formData.images) ? formData.images : [];
+
   useEffect(() => {
     loadProducts();
   }, []);
 
-  const loadProducts = () => {
-    const allProducts = getProducts();
-    setProducts(allProducts);
-    setIsLoading(false);
+  const loadProducts = async () => {
+    try {
+      setIsLoading(true);
+      const allProducts = await listProducts();
+      setProducts(Array.isArray(allProducts) ? allProducts : []);
+    } catch (err) {
+      toast.error(err?.message || 'Failed to load products');
+      setProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const openCreateDialog = () => {
@@ -69,6 +219,7 @@ export default function AdminProducts() {
       price: product.price?.toString() || '',
       original_price: product.original_price?.toString() || '',
       stock: product.stock?.toString() || '',
+      images: Array.isArray(product.images) ? product.images : [],
     });
     setIsDialogOpen(true);
   };
@@ -80,7 +231,7 @@ export default function AdminProducts() {
     setBenefitInput('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const data = {
       ...formData,
@@ -91,23 +242,37 @@ export default function AdminProducts() {
       review_count: formData.review_count || 0,
     };
 
-    if (editingProduct) {
-      updateProduct(editingProduct.id, data);
-      toast.success('Product updated successfully!');
-    } else {
-      createProduct(data);
-      toast.success('Product created successfully!');
+    try {
+      setIsLoading(true);
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, data);
+        toast.success('Product updated successfully!');
+      } else {
+        await createProduct(data);
+        toast.success('Product created successfully!');
+      }
+
+      await loadProducts();
+      closeDialog();
+    } catch (err) {
+      toast.error(err?.message || 'Failed to save product');
+    } finally {
+      setIsLoading(false);
     }
-    
-    loadProducts();
-    closeDialog();
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this product?')) {
-      deleteProduct(id);
-      loadProducts();
-      toast.success('Product deleted successfully!');
+      try {
+        setIsLoading(true);
+        await deleteProduct(id);
+        toast.success('Product deleted successfully!');
+        await loadProducts();
+      } catch (err) {
+        toast.error(err?.message || 'Failed to delete product');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -184,11 +349,17 @@ export default function AdminProducts() {
               >
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="relative h-48 bg-gray-100">
-                    <img
-                      src={product.image_url || 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&q=80'}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <ImageIcon className="w-10 h-10" />
+                      </div>
+                    )}
                     {product.featured && (
                       <Badge className="absolute top-2 left-2 bg-emerald-500">Featured</Badge>
                     )}
@@ -235,20 +406,60 @@ export default function AdminProducts() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Image URL */}
             <div>
-              <Label>Product Image URL</Label>
-              <div className="mt-2 flex items-center gap-4">
-                <div className="w-24 h-24 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
+              <Label>Product Image</Label>
+              <div className="mt-3 grid grid-cols-3 sm:grid-cols-5 gap-3">
+                <div className="relative w-full aspect-square rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
                   {formData.image_url ? (
                     <img src={formData.image_url} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <ImageIcon className="w-8 h-8 text-gray-400" />
                   )}
+                  <div className="absolute inset-x-2 bottom-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      className="h-9 bg-white"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        e.target.value = '';
+                        handleMainImageUpload(f);
+                      }}
+                    />
+                  </div>
                 </div>
-                <Input
-                  placeholder="Enter image URL"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  className="flex-1"
+
+                {gallery.map((img, index) => (
+                  <div key={index} className="relative w-full aspect-square rounded-lg bg-gray-100 overflow-hidden">
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeGalleryImage(index)}
+                      className="absolute top-1 right-1 w-7 h-7 rounded-full bg-white/90 hover:bg-white text-red-600 flex items-center justify-center"
+                      aria-label="Remove image"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="w-full aspect-square rounded-lg border border-dashed border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center"
+                  aria-label="Add image"
+                >
+                  <Plus className="w-6 h-6 text-gray-500" />
+                </button>
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = '';
+                    addGalleryImage(f);
+                  }}
                 />
               </div>
             </div>
@@ -295,12 +506,12 @@ export default function AdminProducts() {
 
             <div>
               <Label htmlFor="description">Full Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={4}
-              />
+              <div className="mt-2">
+                <RichTextEditor
+                  value={formData.description}
+                  onChange={(html) => setFormData((prev) => ({ ...prev, description: html }))}
+                />
+              </div>
             </div>
 
             <div className="grid sm:grid-cols-3 gap-4">

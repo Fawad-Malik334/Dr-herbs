@@ -8,70 +8,100 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/products/ProductCard';
 import ProductFilters from '@/components/products/ProductFilters';
-import { getProducts } from '@/components/data/sampleProducts';
+import { listProducts } from '@/api/api';
+import { toast } from 'sonner';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
   const [filters, setFilters] = useState({
     category: '',
     minPrice: 0,
-    maxPrice: 500,
+    maxPrice: 5000,
     rating: 0,
   });
+
+  const normalizeCategory = (value) => {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .split(/[\s_-]+/g)
+      .filter(Boolean)
+      .join('');
+  };
 
   // Get category from URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const category = params.get('category');
     if (category) {
-      setFilters(prev => ({ ...prev, category }));
+      setFilters(prev => ({ ...prev, category: normalizeCategory(category) }));
     }
   }, []);
 
-  // Load products from localStorage
+  // Load products from backend
   useEffect(() => {
-    const loadProducts = () => {
-      const allProducts = getProducts();
-      setProducts(allProducts);
-      setIsLoading(false);
+    const loadProducts = async () => {
+      try {
+        setLoadError('');
+        setIsLoading(true);
+        const allProducts = await listProducts();
+        setProducts(Array.isArray(allProducts) ? allProducts : []);
+      } catch (err) {
+        const msg = err?.message || 'Failed to load products';
+        setLoadError(msg);
+        setProducts([]);
+        toast.error(msg);
+      } finally {
+        setIsLoading(false);
+      }
     };
+
     loadProducts();
   }, []);
 
   // Filter and sort products
   const filteredProducts = useMemo(() => {
     if (!products) return [];
-    
+
     return products
       .filter(product => {
+
         // Search filter
         if (searchQuery && !product.name?.toLowerCase().includes(searchQuery.toLowerCase())) {
           return false;
         }
         // Category filter
-        if (filters.category && product.category !== filters.category) {
-          return false;
+        if (filters.category) {
+          const left = normalizeCategory(product.category);
+          const right = normalizeCategory(filters.category);
+          if (left !== right) return false;
         }
         // Price filter
-        if (product.price < filters.minPrice || product.price > filters.maxPrice) {
-          return false;
+        const priceNum = Number(product?.price);
+        if (Number.isFinite(priceNum)) {
+          if (priceNum < (filters.minPrice ?? 0) || priceNum > (filters.maxPrice ?? 5000)) {
+            return false;
+          }
         }
         // Rating filter
         if (filters.rating && (product.rating || 0) < filters.rating) {
           return false;
         }
+
         return true;
       })
       .sort((a, b) => {
         switch (sortBy) {
           case 'price-low':
-            return a.price - b.price;
+            return Number(a?.price) - Number(b?.price);
           case 'price-high':
-            return b.price - a.price;
+            return Number(b?.price) - Number(a?.price);
           case 'rating':
             return (b.rating || 0) - (a.rating || 0);
           case 'newest':
@@ -134,7 +164,7 @@ export default function Products() {
             <Button
               variant="outline"
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="lg:hidden h-12 px-4 rounded-xl"
+              className="h-12 px-4 rounded-xl"
             >
               <SlidersHorizontal className="w-5 h-5" />
             </Button>
@@ -143,14 +173,16 @@ export default function Products() {
 
         <div className="flex gap-8">
           {/* Filters Sidebar */}
-          <aside className="hidden lg:block w-64 shrink-0">
-            <ProductFilters 
-              filters={filters}
-              setFilters={setFilters}
-              isOpen={isFilterOpen}
-              setIsOpen={setIsFilterOpen}
-            />
-          </aside>
+          {isFilterOpen && (
+            <aside className="hidden lg:block w-64 shrink-0">
+              <ProductFilters 
+                filters={filters}
+                setFilters={setFilters}
+                isOpen={isFilterOpen}
+                setIsOpen={setIsFilterOpen}
+              />
+            </aside>
+          )}
 
           {/* Mobile Filters */}
           <div className="lg:hidden">
@@ -170,6 +202,13 @@ export default function Products() {
               </p>
             </div>
 
+            {!isLoading && loadError && (
+              <div className="text-center py-10">
+                <p className="text-red-600 text-lg">{loadError}</p>
+                <p className="text-gray-500 mt-2">Please make sure the backend server is running.</p>
+              </div>
+            )}
+
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
@@ -180,7 +219,7 @@ export default function Products() {
                   </div>
                 ))}
               </div>
-            ) : filteredProducts.length === 0 ? (
+            ) : loadError ? null : filteredProducts.length === 0 ? (
               <div className="text-center py-16">
                 <p className="text-gray-500 text-lg">No products found</p>
                 <p className="text-gray-400 mt-2">Try adjusting your filters</p>

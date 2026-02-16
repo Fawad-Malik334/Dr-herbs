@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, ArrowRight, ImageIcon } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -31,14 +32,24 @@ export default function Cart() {
       item.id === id ? { ...item, quantity: newQuantity } : item
     );
     setCartItems(updatedCart);
-    localStorage.setItem('drherbs_cart', JSON.stringify(updatedCart));
+    try {
+      localStorage.setItem('drherbs_cart', JSON.stringify(updatedCart));
+    } catch {
+      toast.error('Cart storage is full. Please clear your cart and try again.');
+      return;
+    }
     window.dispatchEvent(new Event('cartUpdated'));
   };
 
   const removeItem = (id) => {
     const updatedCart = cartItems.filter(item => item.id !== id);
     setCartItems(updatedCart);
-    localStorage.setItem('drherbs_cart', JSON.stringify(updatedCart));
+    try {
+      localStorage.setItem('drherbs_cart', JSON.stringify(updatedCart));
+    } catch {
+      toast.error('Cart storage is full. Please clear your cart and try again.');
+      return;
+    }
     window.dispatchEvent(new Event('cartUpdated'));
     toast.success('Item removed from cart');
   };
@@ -88,11 +99,17 @@ export default function Cart() {
                         className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col sm:flex-row gap-4 sm:gap-6"
                       >
                         <div className="w-full sm:w-32 h-32 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                          <img
-                            src={item.image_url || 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=200&q=80'}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                              <ImageIcon className="w-8 h-8" />
+                            </div>
+                          )}
                         </div>
                         
                         <div className="flex-1">
