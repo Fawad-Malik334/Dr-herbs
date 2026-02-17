@@ -10,8 +10,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import { getReviews, createReview } from '@/components/data/sampleProducts';
-import { getProduct } from '@/api/api';
+import { getProduct, listReviews, createReview } from '@/api/api';
 
 export default function ProductDetail() {
   const [product, setProduct] = useState(null);
@@ -30,9 +29,11 @@ export default function ProductDetail() {
       try {
         const foundProduct = await getProduct(productId);
         setProduct(foundProduct);
+        const productReviews = await listReviews(productId);
+        setReviews(Array.isArray(productReviews) ? productReviews : []);
+      } catch (err) {
+        toast.error(err?.message || 'Failed to load product');
       } finally {
-        const productReviews = getReviews(productId);
-        setReviews(productReviews);
         setIsLoading(false);
       }
     };
@@ -76,21 +77,25 @@ export default function ProductDetail() {
     toast.success(`Added ${quantity} item(s) to cart!`);
   };
 
-  const submitReview = (e) => {
+  const submitReview = async (e) => {
     e.preventDefault();
     if (!reviewForm.name || !reviewForm.comment) {
       toast.error('Please fill in all fields');
       return;
     }
-    const newReview = createReview({
-      product_id: productId,
-      reviewer_name: reviewForm.name,
-      rating: reviewForm.rating,
-      comment: reviewForm.comment,
-    });
-    setReviews([newReview, ...reviews]);
-    setReviewForm({ name: '', rating: 5, comment: '' });
-    toast.success('Review submitted successfully!');
+    try {
+      const newReview = await createReview({
+        product_id: productId,
+        reviewer_name: reviewForm.name,
+        rating: reviewForm.rating,
+        comment: reviewForm.comment,
+      });
+      setReviews([newReview, ...reviews]);
+      setReviewForm({ name: '', rating: 5, comment: '' });
+      toast.success('Review submitted successfully!');
+    } catch (err) {
+      toast.error(err?.message || 'Failed to submit review');
+    }
   };
 
   const images = [product?.image_url, ...(product?.images || [])].filter(Boolean);

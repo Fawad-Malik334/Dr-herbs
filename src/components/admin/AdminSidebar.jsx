@@ -4,10 +4,12 @@ import {
   LayoutDashboard, 
   Package, 
   ShoppingCart, 
+  Target,
   LogOut, 
   Leaf,
   ChevronRight
 } from 'lucide-react';
+
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 
@@ -15,6 +17,7 @@ const menuItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: 'AdminDashboard' },
   { name: 'Products', icon: Package, path: 'AdminProducts' },
   { name: 'Orders', icon: ShoppingCart, path: 'AdminOrders' },
+  { name: 'Facebook Pixel', icon: Target, path: 'AdminFacebookPixel' },
 ];
 
 export default function AdminSidebar({ isOpen, setIsOpen }) {

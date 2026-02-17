@@ -10,7 +10,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminProducts from './pages/AdminProducts';
 import AdminOrders from './pages/AdminOrders';
-
+import AdminFacebookPixel from './pages/AdminFacebookPixel';
 
 export const PAGES = {
     "Home": Home,
@@ -24,9 +24,10 @@ export const PAGES = {
     "AdminDashboard": AdminDashboard,
     "AdminProducts": AdminProducts,
     "AdminOrders": AdminOrders,
+    "AdminFacebookPixel": AdminFacebookPixel,
 }
 
 export const pagesConfig = {
     mainPage: "Home",
     Pages: PAGES,
-};
+}

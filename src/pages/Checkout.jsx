@@ -46,8 +46,11 @@ export default function Checkout() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const adCode = localStorage.getItem('drherbs_ad_code') || '';
+
     const orderData = {
       ...formData,
+      ad_code: adCode,
       items: cartItems.map(item => ({
         id: item.id,
         name: item.name,

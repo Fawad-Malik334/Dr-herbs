@@ -12,6 +12,12 @@ export default function NavigationTracker() {
 
     // Log user activity when navigating to a page
     useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const adCode = params.get('ad_code');
+        if (adCode) {
+            localStorage.setItem('drherbs_ad_code', adCode);
+        }
+
         // Extract page name from pathname
         const pathname = location.pathname;
         let pageName;

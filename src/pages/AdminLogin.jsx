@@ -72,11 +72,11 @@ export default function AdminLogin() {
           </div>
 
           {/* Demo Credentials */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6">
+          {/* <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6">
             <p className="text-sm text-emerald-800 font-medium mb-2">Demo Credentials:</p>
             <p className="text-sm text-emerald-700">Email: admin@drherbs.com</p>
             <p className="text-sm text-emerald-700">Password: admin123</p>
-          </div>
+          </div> */}
 
           {/* Error Alert */}
           {error && (
@@ -102,7 +102,7 @@ export default function AdminLogin() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="admin@drherbs.com"
+                  placeholder="youremail@gmail.com"
                   className="pl-12 h-12 rounded-xl"
                   required
                 />
