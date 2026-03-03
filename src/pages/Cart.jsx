@@ -8,15 +8,18 @@ import { createPageUrl } from '@/utils';
 import { toast } from 'sonner';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import { getProduct } from '@/api/api';
 
 export default function Cart() {
   const [cartItems, setCartItems] = useState([]);
+  const [imageByProductId, setImageByProductId] = useState({});
 
   useEffect(() => {
     const loadCart = () => {
       const cart = JSON.parse(localStorage.getItem('drherbs_cart') || '[]');
       setCartItems(cart);
     };
+
     loadCart();
     window.addEventListener('storage', loadCart);
     window.addEventListener('cartUpdated', loadCart);
@@ -25,6 +28,38 @@ export default function Cart() {
       window.removeEventListener('cartUpdated', loadCart);
     };
   }, []);
+
+  useEffect(() => {
+    const missing = cartItems
+      .filter((i) => !i.image_url)
+      .map((i) => i.product_id || i.id)
+      .filter(Boolean)
+      .filter((id) => imageByProductId[id] == null);
+
+    if (missing.length === 0) return;
+
+    let cancelled = false;
+    const loadMissingImages = async () => {
+      const next = { ...imageByProductId };
+      await Promise.all(
+        missing.map(async (id) => {
+          try {
+            const p = await getProduct(id);
+            const img = p?.image_url || '';
+            next[id] = img;
+          } catch {
+            next[id] = '';
+          }
+        })
+      );
+      if (!cancelled) setImageByProductId(next);
+    };
+
+    loadMissingImages();
+    return () => {
+      cancelled = true;
+    };
+  }, [cartItems, imageByProductId]);
 
   const updateQuantity = (id, newQuantity) => {
     if (newQuantity < 1) return;
@@ -77,12 +112,6 @@ export default function Cart() {
                 <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h2 className="text-2xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
                 <p className="text-gray-500 mb-8">Looks like you haven't added anything yet</p>
-                <Link to={createPageUrl('Products')}>
-                  <Button className="bg-emerald-500 hover:bg-emerald-600 gap-2">
-                    <ArrowLeft className="w-4 h-4" />
-                    Continue Shopping
-                  </Button>
-                </Link>
               </div>
             ) : (
               <div className="grid lg:grid-cols-3 gap-8">
@@ -99,9 +128,9 @@ export default function Cart() {
                         className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col sm:flex-row gap-4 sm:gap-6"
                       >
                         <div className="w-full sm:w-32 h-32 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                          {item.image_url ? (
+                          {(item.image_url || imageByProductId[item.product_id || item.id]) ? (
                             <img
-                              src={item.image_url}
+                              src={item.image_url || imageByProductId[item.product_id || item.id]}
                               alt={item.name}
                               className="w-full h-full object-cover"
                             />
@@ -126,7 +155,7 @@ export default function Cart() {
                           </div>
                           
                           <p className="text-emerald-600 font-semibold text-xl mb-4">
-                            ${item.price?.toFixed(2)}
+                            PKR {item.price?.toFixed(2)}
                           </p>
                           
                           <div className="flex items-center justify-between">
@@ -152,7 +181,7 @@ export default function Cart() {
                               </Button>
                             </div>
                             <p className="font-semibold text-gray-900">
-                              ${(item.price * item.quantity).toFixed(2)}
+                              PKR {(item.price * item.quantity).toFixed(2)}
                             </p>
                           </div>
                         </div>
@@ -175,20 +204,20 @@ export default function Cart() {
                     <div className="space-y-4 mb-6">
                       <div className="flex justify-between text-gray-600">
                         <span>Subtotal</span>
-                        <span>${subtotal.toFixed(2)}</span>
+                        <span>PKR {subtotal.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-gray-600">
                         <span>Shipping</span>
-                        <span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+                        <span>{shipping === 0 ? 'Free' : `PKR ${shipping.toFixed(2)}`}</span>
                       </div>
                       {shipping > 0 && (
                         <p className="text-sm text-emerald-600">
-                          Add ${(50 - subtotal).toFixed(2)} more for free shipping!
+                          Add PKR {(50 - subtotal).toFixed(2)} more for free shipping!
                         </p>
                       )}
                       <div className="border-t pt-4 flex justify-between text-lg font-semibold text-gray-900">
                         <span>Total</span>
-                        <span>${total.toFixed(2)}</span>
+                        <span>PKR {total.toFixed(2)}</span>
                       </div>
                     </div>
 
@@ -196,13 +225,6 @@ export default function Cart() {
                       <Button className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 gap-2 text-lg rounded-xl">
                         Proceed to Checkout
                         <ArrowRight className="w-5 h-5" />
-                      </Button>
-                    </Link>
-
-                    <Link to={createPageUrl('Products')} className="block mt-4">
-                      <Button variant="outline" className="w-full gap-2">
-                        <ArrowLeft className="w-4 h-4" />
-                        Continue Shopping
                       </Button>
                     </Link>
                   </motion.div>

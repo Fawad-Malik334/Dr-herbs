@@ -82,13 +82,6 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
             })}
           </nav>
 
-          {/* View Store Button */}
-          <Link to={createPageUrl('Home')} target="_blank" className="mb-4">
-            <Button variant="outline" className="w-full border-emerald-700 text-emerald-300 hover:bg-emerald-900">
-              View Store →
-            </Button>
-          </Link>
-
           {/* Logout */}
           <Button 
             onClick={handleLogout}

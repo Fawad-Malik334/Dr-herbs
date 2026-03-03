@@ -45,7 +45,7 @@ export default function AdminDashboard() {
   // Recent orders
   const recentOrders = (orders || [])
     .slice()
-    .sort((a, b) => new Date(b?.created_date || 0) - new Date(a?.created_date || 0))
+    .sort((a, b) => new Date(b?.created_date || 0).getTime() - new Date(a?.created_date || 0).getTime())
     .slice(0, 5);
 
   const salesData = (() => {
@@ -66,7 +66,7 @@ export default function AdminDashboard() {
   const stats = [
     {
       title: 'Total Revenue',
-      value: `$${totalRevenue.toFixed(2)}`,
+      value: `PKR ${totalRevenue}`,
       icon: DollarSign,
       change: '',
       isPositive: true,
@@ -270,7 +270,7 @@ export default function AdminDashboard() {
                           </Badge>
                         </td>
                         <td className="py-3 px-4 text-right font-semibold">
-                          ${order.total?.toFixed(2)}
+                          PKR {order.total}
                         </td>
                       </tr>
                     ))

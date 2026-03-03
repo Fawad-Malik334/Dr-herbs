@@ -366,7 +366,7 @@ export default function AdminProducts() {
                   </div>
                   <CardContent className="p-4">
                     <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">{product.name}</h3>
-                    <p className="text-emerald-600 font-bold mb-3">${product.price?.toFixed(2)}</p>
+                    <p className="text-emerald-600 font-bold mb-3">PKR {product.price?.toFixed(2)}</p>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -492,16 +492,6 @@ export default function AdminProducts() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="short_description">Short Description</Label>
-              <Input
-                id="short_description"
-                value={formData.short_description}
-                onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
-                placeholder="Brief description for product cards"
-              />
             </div>
 
             <div>

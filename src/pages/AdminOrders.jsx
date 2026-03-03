@@ -156,7 +156,7 @@ export default function AdminOrders() {
                           {order.items?.length || 0} items
                         </td>
                         <td className="py-4 px-6 font-semibold text-gray-900">
-                          ${order.total?.toFixed(2)}
+                          PKR {order.total}
                         </td>
                         <td className="py-4 px-6">
                           <Select
@@ -273,11 +273,11 @@ export default function AdminOrders() {
                       <div className="flex-1">
                         <p className="font-medium">{item.name}</p>
                         <p className="text-sm text-gray-500">
-                          Qty: {item.quantity} × ${item.price?.toFixed(2)}
+                          Qty: {item.quantity} × PKR {item.price?.toFixed(2)}
                         </p>
                       </div>
                       <p className="font-semibold">
-                        ${(item.quantity * item.price).toFixed(2)}
+                        PKR {(item.quantity * item.price).toFixed(2)}
                       </p>
                     </div>
                   ))}
@@ -288,19 +288,19 @@ export default function AdminOrders() {
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Subtotal</span>
-                  <span>${selectedOrder.subtotal?.toFixed(2)}</span>
+                  <span>PKR {selectedOrder.subtotal?.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Shipping</span>
                   <span>
                     {selectedOrder.shipping_cost === 0
                       ? 'Free'
-                      : `$${selectedOrder.shipping_cost?.toFixed(2)}`}
+                      : `PKR ${selectedOrder.shipping_cost?.toFixed(2)}`}
                   </span>
                 </div>
                 <div className="flex justify-between font-semibold text-lg pt-2 border-t">
                   <span>Total</span>
-                  <span className="text-emerald-600">${selectedOrder.total?.toFixed(2)}</span>
+                  <span className="text-emerald-600">PKR {selectedOrder.total?.toFixed(2)}</span>
                 </div>
               </div>
 

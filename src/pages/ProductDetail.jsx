@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Heart, Star, Minus, Plus, Check, Truck, Shield, RefreshCw, ImageIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,8 +12,10 @@ import { toast } from 'sonner';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { getProduct, listReviews, createReview } from '@/api/api';
+import { createPageUrl } from '@/utils';
 
 export default function ProductDetail() {
+  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,18 +45,17 @@ export default function ProductDetail() {
   }, [productId]);
 
   const addToCart = () => {
-    const safeImageUrl = typeof product.image_url === 'string' && product.image_url.startsWith('data:')
-      ? ''
-      : product.image_url;
+    const safeImageUrl = product.image_url;
 
     const cart = JSON.parse(localStorage.getItem('drherbs_cart') || '[]');
     const existingItem = cart.find(item => item.id === product.id);
-    
+
     if (existingItem) {
       existingItem.quantity += quantity;
     } else {
       cart.push({
         id: product.id,
+        product_id: product.id,
         name: product.name,
         price: product.price,
         image_url: safeImageUrl,
@@ -75,6 +77,7 @@ export default function ProductDetail() {
 
     window.dispatchEvent(new Event('cartUpdated'));
     toast.success(`Added ${quantity} item(s) to cart!`);
+    navigate(createPageUrl('Cart'));
   };
 
   const submitReview = async (e) => {
@@ -211,19 +214,14 @@ export default function ProductDetail() {
 
               <div className="flex items-center gap-4 mb-6">
                 <span className="text-4xl font-bold text-emerald-600">
-                  ${product.price?.toFixed(2)}
+                  PKR {product.price?.toFixed(2)}
                 </span>
                 {product.original_price && (
                   <span className="text-xl text-gray-400 line-through">
-                    ${product.original_price?.toFixed(2)}
+                    PKR {product.original_price?.toFixed(2)}
                   </span>
                 )}
               </div>
-
-              <div
-                className="text-gray-600 text-lg mb-8 leading-relaxed prose max-w-none"
-                dangerouslySetInnerHTML={{ __html: product.description || '' }}
-              />
 
               {/* Benefits */}
               {product.benefits?.length > 0 && (
@@ -292,87 +290,11 @@ export default function ProductDetail() {
           </div>
 
           {/* Tabs Section */}
-          <Tabs defaultValue="reviews" className="bg-white rounded-3xl p-8 shadow-sm">
-            <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto mb-8">
-              <TabsTrigger value="reviews">Reviews ({reviews?.length || 0})</TabsTrigger>
+          <Tabs defaultValue="description" className="bg-white rounded-3xl p-8 shadow-sm">
+            <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto mb-8">
               <TabsTrigger value="description">Description</TabsTrigger>
               <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="reviews">
-              {/* Review Form */}
-              <div className="bg-gray-50 rounded-2xl p-6 mb-8">
-                <h3 className="font-semibold text-gray-900 mb-4">Write a Review</h3>
-                <form onSubmit={submitReview} className="space-y-4">
-                  <Input
-                    placeholder="Your name"
-                    value={reviewForm.name}
-                    onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
-                  />
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-600">Rating:</span>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setReviewForm({ ...reviewForm, rating: star })}
-                      >
-                        <Star
-                          className={`w-6 h-6 ${
-                            star <= reviewForm.rating
-                              ? 'fill-yellow-400 text-yellow-400'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                  <Textarea
-                    placeholder="Your review..."
-                    value={reviewForm.comment}
-                    onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                    rows={4}
-                  />
-                  <Button type="submit" className="bg-emerald-500 hover:bg-emerald-600">
-                    Submit Review
-                  </Button>
-                </form>
-              </div>
-
-              {/* Reviews List */}
-              <div className="space-y-6">
-                {reviews?.length === 0 && (
-                  <p className="text-center text-gray-500 py-8">No reviews yet. Be the first to review!</p>
-                )}
-                {reviews?.map((review) => (
-                  <div key={review.id} className="border-b pb-6">
-                    <div className="flex items-center gap-4 mb-3">
-                      <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                        <span className="font-semibold text-emerald-600">
-                          {review.reviewer_name?.[0]?.toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">{review.reviewer_name}</p>
-                        <div className="flex items-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < review.rating
-                                  ? 'fill-yellow-400 text-yellow-400'
-                                  : 'text-gray-200'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-gray-600">{review.comment}</p>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
 
             <TabsContent value="description" className="prose max-w-none">
               <div
@@ -387,6 +309,81 @@ export default function ProductDetail() {
               </p>
             </TabsContent>
           </Tabs>
+
+          <div className="bg-white rounded-3xl p-8 shadow-sm mt-8">
+            {/* Review Form */}
+            <div className="bg-gray-50 rounded-2xl p-6 mb-8">
+              <h3 className="font-semibold text-gray-900 mb-4">Write a Review</h3>
+              <form onSubmit={submitReview} className="space-y-4">
+                <Input
+                  placeholder="Your name"
+                  value={reviewForm.name}
+                  onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
+                />
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600">Rating:</span>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                    >
+                      <Star
+                        className={`w-6 h-6 ${
+                          star <= reviewForm.rating
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                <Textarea
+                  placeholder="Your review..."
+                  value={reviewForm.comment}
+                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                  rows={4}
+                />
+                <Button type="submit" className="bg-emerald-500 hover:bg-emerald-600">
+                  Submit Review
+                </Button>
+              </form>
+            </div>
+
+            {/* Reviews List */}
+            <div className="space-y-6">
+              {reviews?.length === 0 && (
+                <p className="text-center text-gray-500 py-8">No reviews yet. Be the first to review!</p>
+              )}
+              {reviews?.map((review) => (
+                <div key={review.id} className="border-b pb-6">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                      <span className="font-semibold text-emerald-600">
+                        {review.reviewer_name?.[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{review.reviewer_name}</p>
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-4 h-4 ${
+                              i < review.rating
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-gray-200'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-gray-600">{review.comment}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </main>
 

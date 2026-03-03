@@ -98,7 +98,7 @@ export default function Checkout() {
             <h1 className="text-3xl font-bold text-gray-900 mb-4">Order Confirmed!</h1>
             <p className="text-gray-600 mb-2">Thank you for your order.</p>
             <p className="text-gray-500 mb-8">Order ID: #{orderId?.slice(-8)}</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {/* <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to={createPageUrl('Products')}>
                 <Button className="bg-emerald-500 hover:bg-emerald-600">
                   Continue Shopping
@@ -107,7 +107,7 @@ export default function Checkout() {
               <Link to={createPageUrl('Home')}>
                 <Button variant="outline">Back to Home</Button>
               </Link>
-            </div>
+            </div> */}
           </div>
         </main>
         <Footer />
@@ -247,7 +247,7 @@ export default function Checkout() {
                   disabled={isSubmitting}
                   className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-lg rounded-xl"
                 >
-                  {isSubmitting ? 'Processing...' : `Place Order • $${total.toFixed(2)}`}
+                  {isSubmitting ? 'Processing...' : `Place Order • PKR ${total.toFixed(2)}`}
                 </Button>
               </form>
             </motion.div>
@@ -281,7 +281,7 @@ export default function Checkout() {
                         <p className="font-medium text-sm line-clamp-1">{item.name}</p>
                         <p className="text-gray-500 text-sm">Qty: {item.quantity}</p>
                         <p className="text-emerald-600 font-semibold">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          PKR {(item.price * item.quantity).toFixed(2)}
                         </p>
                       </div>
                     </div>
@@ -291,15 +291,15 @@ export default function Checkout() {
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>PKR {subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Shipping</span>
-                    <span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+                    <span>{shipping === 0 ? 'Free' : `PKR ${shipping.toFixed(2)}`}</span>
                   </div>
                   <div className="flex justify-between text-lg font-semibold pt-2 border-t">
                     <span>Total</span>
-                    <span className="text-emerald-600">${total.toFixed(2)}</span>
+                    <span className="text-emerald-600">PKR {total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

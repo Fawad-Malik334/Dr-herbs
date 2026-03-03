@@ -43,15 +43,14 @@ export default function Footer() {
             </p>
             <div className="flex gap-4">
               {socialLinks.map((social) => (
-                <motion.a
+                <motion.div
                   key={social.label}
-                  href={social.href}
                   whileHover={{ scale: 1.2, y: -2 }}
                   className="w-10 h-10 bg-emerald-800 hover:bg-emerald-700 rounded-full flex items-center justify-center transition-colors"
                   aria-label={social.label}
                 >
                   <social.icon className="w-5 h-5" />
-                </motion.a>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -62,12 +61,9 @@ export default function Footer() {
             <ul className="space-y-3">
               {footerLinks.shop.map((link) => (
                 <li key={link.name}>
-                  <Link 
-                    to={createPageUrl(link.path)}
-                    className="text-emerald-200 hover:text-white transition-colors text-sm"
-                  >
+                  <span className="text-emerald-200 transition-colors text-sm">
                     {link.name}
-                  </Link>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -102,15 +98,15 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-3 text-sm">
                 <Phone className="w-5 h-5 text-emerald-400 shrink-0" />
-                <a href="tel:+1234567890" className="text-emerald-200 hover:text-white transition-colors">
+                <span className="text-emerald-200 transition-colors">
                   +1 (234) 567-890
-                </a>
+                </span>
               </li>
               <li className="flex items-center gap-3 text-sm">
                 <Mail className="w-5 h-5 text-emerald-400 shrink-0" />
-                <a href="mailto:hello@drherbs.com" className="text-emerald-200 hover:text-white transition-colors">
+                <span className="text-emerald-200 transition-colors">
                   hello@drherbs.com
-                </a>
+                </span>
               </li>
             </ul>
           </div>
@@ -119,12 +115,12 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-emerald-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-emerald-300 text-sm">
-            © {new Date().getFullYear()} Dr. Herbs. All rights reserved.
+            {new Date().getFullYear()} Dr. Herbs. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm">
-            <a href="#" className="text-emerald-300 hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="text-emerald-300 hover:text-white transition-colors">Terms of Service</a>
-            <a href="#" className="text-emerald-300 hover:text-white transition-colors">Refund Policy</a>
+            <span className="text-emerald-300 transition-colors">Privacy Policy</span>
+            <span className="text-emerald-300 transition-colors">Terms of Service</span>
+            <span className="text-emerald-300 transition-colors">Refund Policy</span>
           </div>
         </div>
       </div>

@@ -51,7 +51,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to={createPageUrl('Home')} className="flex items-center gap-2 group">
+          <div className="flex items-center gap-2 group">
             <motion.div
               whileHover={{ rotate: 360 }}
               transition={{ duration: 0.6 }}
@@ -64,25 +64,36 @@ export default function Header() {
             }`}>
               Dr. Herbs
             </span>
-          </Link>
+          </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                to={createPageUrl(link.path)}
-                className={`relative font-medium transition-colors hover:text-emerald-500 ${
-                  isScrolled ? 'text-gray-700' : 'text-white'
-                }`}
-              >
-                <motion.span
-                  whileHover={{ y: -2 }}
-                  className="inline-block"
+              (link.path === 'Home' || link.path === 'Products') ? (
+                <span
+                  key={link.name}
+                  className={`relative font-medium cursor-default ${
+                    isScrolled ? 'text-gray-700' : 'text-white'
+                  }`}
                 >
                   {link.name}
-                </motion.span>
-              </Link>
+                </span>
+              ) : (
+                <Link
+                  key={link.name}
+                  to={createPageUrl(link.path)}
+                  className={`relative font-medium transition-colors hover:text-emerald-500 ${
+                    isScrolled ? 'text-gray-700' : 'text-white'
+                  }`}
+                >
+                  <motion.span
+                    whileHover={{ y: -2 }}
+                    className="inline-block"
+                  >
+                    {link.name}
+                  </motion.span>
+                </Link>
+              )
             ))}
           </nav>
 
@@ -113,7 +124,7 @@ export default function Header() {
               </motion.div>
             </Link>
 
-            <Link to={createPageUrl('AdminLogin')} className="hidden md:block">
+            {/* <Link to={createPageUrl('AdminLogin')} className="hidden md:block">
               <Button 
                 variant={isScrolled ? "outline" : "secondary"}
                 className="gap-2"
@@ -121,7 +132,7 @@ export default function Header() {
                 <User className="w-4 h-4" />
                 Admin
               </Button>
-            </Link>
+            </Link> */}
 
             {/* Mobile Menu Toggle */}
             <Button
@@ -147,22 +158,31 @@ export default function Header() {
           >
             <nav className="flex flex-col p-4 gap-2">
               {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={createPageUrl(link.path)}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-4 py-3 text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition-colors"
-                >
-                  {link.name}
-                </Link>
+                (link.path === 'Home' || link.path === 'Products') ? (
+                  <div
+                    key={link.name}
+                    className="px-4 py-3 text-gray-700 rounded-lg"
+                  >
+                    {link.name}
+                  </div>
+                ) : (
+                  <Link
+                    key={link.name}
+                    to={createPageUrl(link.path)}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="px-4 py-3 text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition-colors"
+                  >
+                    {link.name}
+                  </Link>
+                )
               ))}
-              <Link
+              {/* <Link
                 to={createPageUrl('AdminLogin')}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="px-4 py-3 text-emerald-600 font-medium hover:bg-emerald-50 rounded-lg transition-colors"
               >
                 Admin Login
-              </Link>
+              </Link> */}
             </nav>
           </motion.div>
         )}
