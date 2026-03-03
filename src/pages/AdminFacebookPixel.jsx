@@ -52,7 +52,7 @@ export default function AdminFacebookPixel() {
     <AdminLayout title="Facebook Pixel">
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Search by Ad Code</CardTitle>
+          <CardTitle>Search by Ad Code / Campaign</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -90,7 +90,7 @@ export default function AdminFacebookPixel() {
               <CardTitle>Total Revenue</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">${totalRevenue.toFixed(2)}</div>
+              <div className="text-3xl font-bold">PKR {totalRevenue.toFixed(2)}</div>
               <div className="text-sm text-gray-500 mt-1">From attributed orders</div>
             </CardContent>
           </Card>
@@ -128,7 +128,7 @@ export default function AdminFacebookPixel() {
                         <td className="py-3 px-4">
                           <Badge className={statusColors[o.status] || statusColors.pending}>{o.status || 'pending'}</Badge>
                         </td>
-                        <td className="py-3 px-4 text-right font-semibold">${Number(o.total || 0).toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right font-semibold">PKR {Number(o.total || 0).toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>

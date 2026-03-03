@@ -46,11 +46,23 @@ export default function Checkout() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const adCode = localStorage.getItem('drherbs_ad_code') || '';
+    let trackingData = {};
+    try {
+      const raw = localStorage.getItem('tracking_data');
+      const parsed = raw ? JSON.parse(raw) : null;
+      trackingData = parsed?.data && typeof parsed.data === 'object' ? parsed.data : {};
+    } catch {
+      trackingData = {};
+    }
+
+    const legacyAdCode = localStorage.getItem('drherbs_ad_code') || '';
+    if (!trackingData?.ad_code && legacyAdCode) {
+      trackingData = { ...trackingData, ad_code: legacyAdCode };
+    }
 
     const orderData = {
       ...formData,
-      ad_code: adCode,
+      ...trackingData,
       items: cartItems.map(item => ({
         id: item.id,
         name: item.name,
