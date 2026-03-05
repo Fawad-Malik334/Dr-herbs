@@ -124,7 +124,7 @@ export default function Header() {
               </motion.div>
             </Link>
 
-            {/* <Link to={createPageUrl('AdminLogin')} className="hidden md:block">
+            <Link to={createPageUrl('AdminLogin')} className="hidden md:block">
               <Button 
                 variant={isScrolled ? "outline" : "secondary"}
                 className="gap-2"
@@ -132,7 +132,7 @@ export default function Header() {
                 <User className="w-4 h-4" />
                 Admin
               </Button>
-            </Link> */}
+            </Link>
 
             {/* Mobile Menu Toggle */}
             <Button
@@ -176,13 +176,13 @@ export default function Header() {
                   </Link>
                 )
               ))}
-              {/* <Link
+              <Link
                 to={createPageUrl('AdminLogin')}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="px-4 py-3 text-emerald-600 font-medium hover:bg-emerald-50 rounded-lg transition-colors"
               >
                 Admin Login
-              </Link> */}
+              </Link>
             </nav>
           </motion.div>
         )}
