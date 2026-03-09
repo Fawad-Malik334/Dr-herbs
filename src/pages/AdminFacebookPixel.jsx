@@ -7,12 +7,49 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { getFacebookPixelReport } from '@/api/api';
+import { getFacebookPixelReport, getMetaConfigAdmin, verifyMetaPixel } from '@/api/api';
 
 export default function AdminFacebookPixel() {
+  const [config, setConfig] = useState({ pixel_id: '', test_event_code: '' });
+  const [hasToken, setHasToken] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+
   const [adCode, setAdCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [report, setReport] = useState(null);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const cfg = await getMetaConfigAdmin();
+        setConfig((prev) => ({
+          ...prev,
+          pixel_id: String(cfg?.pixel_id || ''),
+          test_event_code: String(cfg?.test_event_code || ''),
+        }));
+        setHasToken(Boolean(cfg?.has_access_token));
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
+
+  const onVerifyPixel = async () => {
+    const pixelId = String(config.pixel_id || '').trim();
+    if (!pixelId) {
+      toast.error('Please enter Pixel ID');
+      return;
+    }
+    setIsVerifying(true);
+    try {
+      await verifyMetaPixel(pixelId);
+      toast.success('Pixel is valid');
+    } catch (err) {
+      toast.error(err?.message || 'Pixel verification failed');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const onSearch = async () => {
     const code = String(adCode || '').trim();
@@ -50,6 +87,38 @@ export default function AdminFacebookPixel() {
 
   return (
     <AdminLayout title="Facebook Pixel">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Meta Pixel Configuration</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <div className="text-sm text-gray-600 mb-1">Pixel ID (env)</div>
+              <Input value={config.pixel_id} readOnly />
+            </div>
+            <div>
+              <div className="text-sm text-gray-600 mb-1">Access Token (env)</div>
+              <Input value={hasToken ? 'Saved' : 'Not set'} readOnly />
+            </div>
+            <div>
+              <div className="text-sm text-gray-600 mb-1">Test Event Code (env, optional)</div>
+              <Input value={config.test_event_code} readOnly />
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            <Button
+              variant="outline"
+              onClick={onVerifyPixel}
+              disabled={isVerifying}
+            >
+              {isVerifying ? 'Verifying...' : 'Verify Pixel'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Search by Ad Code / Campaign</CardTitle>

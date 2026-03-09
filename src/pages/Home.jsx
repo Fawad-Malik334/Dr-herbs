@@ -68,11 +68,11 @@ export default function Home() {
       <Header />
       <main>
         <HeroSlider slides={heroSlides} />
-        <FeaturedProducts products={products} isLoading={isLoading} />
+        {/* <FeaturedProducts products={products} isLoading={isLoading} /> */}
         <AboutSection />
-        <CategoryShowcase categories={categories} />
-        <TestimonialsSection />
-        <NewsletterSection />
+        {/* <CategoryShowcase categories={categories} /> */}
+        {/* <TestimonialsSection /> */}
+        {/* <NewsletterSection /> */}
       </main>
 
       <Footer />

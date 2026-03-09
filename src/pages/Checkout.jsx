@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { createOrder } from '@/api/api';
+import { trackMetaInitiateCheckout, trackMetaPurchase } from '@/lib/metaPixel';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -42,6 +43,16 @@ export default function Checkout() {
   const shipping = subtotal > 50 ? 0 : 5.99;
   const total = subtotal + shipping;
 
+  useEffect(() => {
+    if (orderPlaced) return;
+    if (!cartItems?.length) return;
+    trackMetaInitiateCheckout({
+      value: Number(total || 0),
+      currency: 'PKR',
+      numItems: cartItems.reduce((sum, it) => sum + Number(it?.quantity || 0), 0),
+    });
+  }, [cartItems, orderPlaced, total]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -60,9 +71,14 @@ export default function Checkout() {
       trackingData = { ...trackingData, ad_code: legacyAdCode };
     }
 
+    const eventId = (globalThis.crypto && globalThis.crypto.randomUUID)
+      ? globalThis.crypto.randomUUID()
+      : String(Date.now());
+
     const orderData = {
       ...formData,
       ...trackingData,
+      event_id: eventId,
       items: cartItems.map(item => ({
         id: item.id,
         name: item.name,
@@ -92,6 +108,8 @@ export default function Checkout() {
     setOrderPlaced(true);
     setIsSubmitting(false);
     toast.success('Order placed successfully!');
+
+    trackMetaPurchase({ value: total, currency: 'PKR', eventId });
   };
 
   if (orderPlaced) {

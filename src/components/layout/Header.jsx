@@ -130,7 +130,7 @@ export default function Header() {
                 className="gap-2"
               >
                 <User className="w-4 h-4" />
-                Admin
+                Login
               </Button>
             </Link>
 
@@ -181,7 +181,7 @@ export default function Header() {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="px-4 py-3 text-emerald-600 font-medium hover:bg-emerald-50 rounded-lg transition-colors"
               >
-                Admin Login
+                Login
               </Link>
             </nav>
           </motion.div>

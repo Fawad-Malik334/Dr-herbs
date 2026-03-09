@@ -84,7 +84,7 @@ export default function HeroSlider({ slides = [] }) {
                 {active?.description || 'Crafted with 100% natural ingredients for your wellness journey'}
               </p>
 
-              <Link to={createPageUrl('Products')}>
+              {/* <Link to={createPageUrl('Products')}>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -98,7 +98,7 @@ export default function HeroSlider({ slides = [] }) {
                   </Button>
 
                 </motion.div>
-              </Link>
+              </Link> */}
             </motion.div>
           </AnimatePresence>
         </div>

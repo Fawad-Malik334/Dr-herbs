@@ -13,6 +13,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { getProduct, listReviews, createReview } from '@/api/api';
 import { createPageUrl } from '@/utils';
+import { trackMetaAddToCart, trackMetaViewContent } from '@/lib/metaPixel';
 
 export default function ProductDetail() {
   const navigate = useNavigate();
@@ -32,6 +33,14 @@ export default function ProductDetail() {
       try {
         const foundProduct = await getProduct(productId);
         setProduct(foundProduct);
+
+        trackMetaViewContent({
+          contentId: foundProduct?.id,
+          contentName: foundProduct?.name,
+          value: foundProduct?.price,
+          currency: 'PKR',
+        });
+
         const productReviews = await listReviews(productId);
         setReviews(Array.isArray(productReviews) ? productReviews : []);
       } catch (err) {
@@ -46,6 +55,13 @@ export default function ProductDetail() {
 
   const addToCart = () => {
     const safeImageUrl = product.image_url;
+
+    trackMetaAddToCart({
+      contentId: product?.id,
+      contentName: product?.name,
+      value: Number(product?.price || 0) * Number(quantity || 1),
+      currency: 'PKR',
+    });
 
     const cart = JSON.parse(localStorage.getItem('drherbs_cart') || '[]');
     const existingItem = cart.find(item => item.id === product.id);

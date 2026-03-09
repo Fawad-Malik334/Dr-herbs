@@ -127,3 +127,21 @@ export const getFacebookPixelReport = async (adCode) => {
     headers: withAdminAuth(),
   });
 };
+
+export const getMetaConfigPublic = async () => {
+  return apiFetch('/api/meta-config/public');
+};
+
+export const getMetaConfigAdmin = async () => {
+  return apiFetch('/api/meta-config', {
+    headers: withAdminAuth(),
+  });
+};
+
+export const verifyMetaPixel = async (pixelId) => {
+  const qs = new URLSearchParams();
+  qs.set('pixel_id', String(pixelId || ''));
+  return apiFetch(`/api/meta-config/verify?${qs.toString()}`, {
+    headers: withAdminAuth(),
+  });
+};
